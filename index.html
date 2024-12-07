@@ -183,8 +183,8 @@
 
 </style>
 
-	  <title>The Platonic Representation Hypothesis</title>
-      <meta property="og:title" content="The Platonic Representation Hypothesis" />
+	  <title>Regularization from the Spectral Perspective</title>
+      <meta property="og:title" content="Regularization from the Spectral Perspective" />
 			<meta charset="UTF-8">
   </head>
 
@@ -197,15 +197,15 @@
 						<table class="header" align=left>
 								<tr>
 									<td colspan=4>
-										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">A Grand Unified Theory of Deep Learning</span>
+										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">Regularization from the Spectral Perspective</span>
 									</td>
 								</tr>
 								<tr>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_website">Your name</a></span>
+												<span style="font-size:17px"><a href="your_website">Emily Gan</a></span>
 										</td>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_partner's_website">Your partner's name</a></span>
+												<span style="font-size:17px"><a href="your_partner's_website">Andrew Kessler</a></span>
 										</td>
 								<tr>
 									<td colspan=4 align=left><span style="font-size:18px">Final project for 6.7960, MIT</span></td>
@@ -217,47 +217,65 @@
 		</div>
 
 		<div class="content-margin-container" id="intro">
-				<div class="margin-left-block">
-          <!-- table of contents here -->
-          <div style="position:fixed; max-width:inherit; top:max(20%,120px)">
-              <b style="font-size:16px">Outline</b><br><br>
-              <a href="#intro">Introduction</a><br><br>
-              <a href="#does_x_do_y">Does X do Y?</a><br><br>
-              <a href="#implications_and_limitations">Implications and limitations</a><br><br>
-          </div>
+			<div class="margin-left-block">
+				<!-- table of contents here -->
+				<div style="position:fixed; max-width:inherit; top:max(20%,120px)">
+					<b style="font-size:16px">Outline</b><br><br>
+					<a href="#intro">Introduction</a><br><br>
+					<a href="#Experiments">Experiments</a><br><br>
+					<a href="#implications_and_limitations">Implications and limitations</a><br><br>
 				</div>
+			</div>
+
 		    <div class="main-content-block">
-            <!--You can embed an image like this:-->
-            <img src="./images/your_image_here.png" width=512px/>
+				<!--You can embed an image like this:-->
+				<img src="./images/your_image_here.png" width=512px/>
 		    </div>
 		    <div class="margin-right-block">
 						Caption for the image.
 		    </div>
 		</div>
 
-    <div class="content-margin-container" id="intro">
+    <div class="content-margin-container" id="Introduction">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-						<h1>Introduction</h1>
-            Motivate your project. What question are you asking. Why is it unanswered so far? What gap in the literature or practice are you filling?
-            Why is it important?
+						<h2>Introduction</h2>
+			A central consideration in data science is regularization. The story usually goes something like this: vanilla minimization of an error function favors models overfit to training data, so we push training towards simpler solutions via regularization, and that leads to improved generalization. 
+			<br><br>
+			Broadly, this is done on the data-side (e.g. augmentation), in model structure (layer norm or dropout), and/or in the loss function itself (norm regularization). There are many arguments for regularization in favoring these simpler models, but the question is simple in what sense? For example, L2 regularization promotes small solutions, but L1 norm regularization is better for when sparsity is needed. Modern data science practitioners must be able to identify when and where to apply different regularization techniques. Here we aim to accomplish and understand regularization from a spectral perspective.
+
+			<br><br>
+			Deep learning naturally lends itself to tensor computation. For example, a standard MLP is just the composition of a sequence of matrices and nonlinearities. Spectral decomposition summarizes tensors with eigenvalues and smaller tensors, and we want to leverage this approach for regularization. Specifically, what happens when we favor models that are simple in the spectral sense? How can we efficiently train them?
+					
 		    </div>
 		    <div class="margin-right-block">
 						Margin note that clarifies some detail #main-content-block for intro section.
 		    </div>
 		</div>
 
-		<div class="content-margin-container" id="does_x_do_y">
+		<div class="content-margin-container" id="How does spectral dropout compare to vanilla dropout?">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-					<h1>Does X do Y?</h1>
-				  It is well known that Y does Y. And this has raised the question does X do Y? Because if Y does Y then it stands to reason that X does Y.
-          But we cannot answer this until we realize the Z implies Y and X can be linked to Z.<br><br>
+					<h1>How does spectral dropout compare to vanilla dropout?</h1>
+			There are existing techniques for spectral norm regularization, which will serve as a benchmark against other standard paradigms like weight decay. We want to answer two main questions by training AlexNet with different dropout techniques on CIFAR-10:
+			<img src="./images/alexnet_diagram.png" width=512px/>
+			<ul>
+				<li>
+			Can spectral dropout improve the generalization of deep learning models? That is, if we probabilistically remove the spectral components of model tensors based on their singular values, will that reduce overfitting? Our hypothesis is that spectral dropout will learn useful intermediate representations via a similar robustness to that granted by standard dropout.
+				</li>
+				<li>
+					How sensitive are networks to spectral perturbations in their tensor components? If we add noise to the model weights that is small in terms of its spectral norm (either adversarially or randomly), does that measurably affect performance?
 
-          Now let's write some math!<br>
-          <center>
+				</li>
+			</ul>
+			
+			<!-- <br><br>
+		    <div class="margin-right-block">
+						Margin note that clarifies some detail #main-content-block for intro section.
+		    </div> -->
+          <!-- <center>
             <math xmlns="http://www.w3.org/1998/Math/MathML">
               <mrow>
                 <mrow>
@@ -273,15 +291,37 @@
               <mo>=</mo>
               <mi>x</mi>
             </math>
-          </center>
-          <br>
-          It's probably best to ask an LLM to help do the web
+          </center> -->
+          <!-- <br> -->
+          <!-- It's probably best to ask an LLM to help do the web
           formatting for math. You can tell it "convert this latex equation into MathML: $$\frac{\partial dy}{\partial dx} = x$$"
           But it took me a few tries. So, if you get frustrated, you can embed an image of the equation, or use other packages for
-          rendering equations on webpages.
+          rendering equations on webpages. -->
 		    </div>
-		    <div class="margin-right-block" style="transform: translate(0%, -100%);"> <!-- you can move the margin notes up and down with translate -->
-          Interestingly, Plato also asked if X does Y, in <a href="#ref_1">[1]</a>.
+		    <div class="margin-right-block" style="transform: translate(0%, -100%);">
+				<!-- <div class="margin-right-block"> -->
+					AlexNet architecture. ReLU activation is used after convolutional and linear layers.
+				<!-- </div> -->
+		    </div>
+		</div>
+
+		<div class="content-margin-container" id="Experiments">
+			<div class="margin-left-block">
+			</div>
+				<div class="main-content-block">
+					<h1>Experiments</h1>
+					We use the protocol <a href="https://www.digitalocean.com/community/tutorials/alexnet-pytorch#testing">AlexNet on CIFAR-10</a>, training for 6 epochs with batch size 64, using cross-entropy loss with the SGD optimizer (learning rate 0.005, weight decay 0.005, momentum 0.9).
+					We also follow the protocol to transform CIFAR-10 images from 32x32 to the proper 227x227 input for unmodified AlexNet architecture.
+					<h1>Control</h1>
+					We will compare the performance of AlexNet with spectral regularization to the following baselines:
+					<ul>
+						<li>Vanilla AlexNet</li>
+						<li>Standard dropout, probability 0.5</li>
+					</ul>
+					<img src="./images/alexnet_diagram.png" width=512px/>
+					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve performance.
+				</div>
+		    <div class="margin-right-block">
 		    </div>
 		</div>
 
