@@ -300,7 +300,7 @@
 		    </div>
 		    <div class="margin-right-block" style="transform: translate(0%, -100%);">
 				<!-- <div class="margin-right-block"> -->
-					AlexNet architecture. ReLU activation is used after convolutional and linear layers.
+					Fig. 1. AlexNet architecture. ReLU activation is used after convolutional and linear layers.
 				<!-- </div> -->
 		    </div>
 		</div>
@@ -309,19 +309,20 @@
 			<div class="margin-left-block">
 			</div>
 				<div class="main-content-block">
-					<h1>Experiments</h1>
+					<h2>Experiments</h2>
 					We use the protocol <a href="https://www.digitalocean.com/community/tutorials/alexnet-pytorch#testing">AlexNet on CIFAR-10</a>, training for 6 epochs with batch size 64, using cross-entropy loss with the SGD optimizer (learning rate 0.005, weight decay 0.005, momentum 0.9).
 					We also follow the protocol to transform CIFAR-10 images from 32x32 to the proper 227x227 input for unmodified AlexNet architecture.
 					<h1>Control</h1>
-					We will compare the performance of AlexNet with spectral regularization to the following baselines:
+					We first measure the performance of AlexNet for the following baselines:
 					<ul>
-						<li>Vanilla AlexNet</li>
-						<li>Standard dropout, probability 0.5</li>
+						<li>No dropout (p = 0)</li>
+						<li>Standard dropout (p = 0.5)</li>
 					</ul>
-					<img src="./images/alexnet_diagram.png" width=512px/>
-					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve performance.
+					<img src="./images/control.png" width=512px/>
+					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve performance at the cost of more variable and higher loss.
 				</div>
 		    <div class="margin-right-block">
+				Fig. 2. Training loss for controls, with dropout probability p.
 		    </div>
 		</div>
 
