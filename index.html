@@ -319,7 +319,7 @@
 						<li>Standard dropout (p = 0.5)</li>
 					</ul>
 					<img src="./images/control.png" width=512px/>
-					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve performance at the cost of more variable and higher loss.
+					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve generalization and test performance at the cost of more variable and higher training loss.
 				</div>
 		    <div class="margin-right-block">
 				Fig. 2. Training loss for controls, with dropout probability p.
@@ -346,7 +346,7 @@
 				</div>
 		    <div class="main-content-block">
 						<h1>Implications and limitations</h1>
-						Let's end with some discussion of the implications and limitations.
+						One factor which may preclude this technique from practical use is computational complexity. Spectral dropout requires a full SVD of the weight tensor at each iteration, which is extremely expensive compared to naive, independent dropout. This may be mitigated using a low-rank approximation of the weight tensor.
 		    </div>
 		    <div class="margin-right-block">
 		    </div>
