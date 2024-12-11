@@ -183,8 +183,8 @@
 
 </style>
 
-	  <title>Regularization from the Spectral Perspective</title>
-      <meta property="og:title" content="Regularization from the Spectral Perspective" />
+	  <title>Regularization from the Spectral Perspective with Dropout</title>
+      <meta property="og:title" content="Regularization from the Spectral Perspective with Dropout" />
 			<meta charset="UTF-8">
   </head>
 
@@ -197,7 +197,7 @@
 						<table class="header" align=left>
 								<tr>
 									<td colspan=4>
-										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">Regularization from the Spectral Perspective</span>
+										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">Regularization from the Spectral Perspective with Dropout</span>
 									</td>
 								</tr>
 								<tr>
@@ -222,17 +222,19 @@
 				<div style="position:fixed; max-width:inherit; top:max(20%,120px)">
 					<b style="font-size:16px">Outline</b><br><br>
 					<a href="#intro">Introduction</a><br><br>
-					<a href="#Experiments">Experiments</a><br><br>
-					<a href="#implications_and_limitations">Implications and limitations</a><br><br>
+					<a href="#spectral_dropout">Spectral Dropout</a><br><br>
+					<a href="#experiments">Experiments</a><br><br>
+					<a href="#next_steps_and_considerations">Next Steps and Considerations</a><br><br>
+					<a href="#conclusion">Conclusion</a><br><br>
 				</div>
 			</div>
 
 		    <div class="main-content-block">
 				<!--You can embed an image like this:-->
-				<img src="./images/spectral dropout.png" width=1024px/>
+				<img src="./images/intro.png" width=800px/>
+				<figcaption>Figure 1: Spectral Dropout randomly zeros out some spectral components in deep nets' linear layers for regularization.</figcaption>
 		    </div>
 		    <div class="margin-right-block">
-						Spectral dropout: a new regularization technique.
 		    </div>
 		</div>
 
@@ -241,113 +243,197 @@
 				</div>
 		    <div class="main-content-block">
 						<h2>Introduction</h2>
-			A central consideration in data science is regularization. The story usually goes something like this: vanilla minimization of an error function favors models overfit to training data, so we push training towards simpler solutions via regularization, and that leads to improved generalization. 
+			A central problem in deep learning is that of regularization. Vanilla models often are overfit to the training data, and regularization is added to the system in order to improve generalization. Broadly, this is done on the data-side (e.g. augmentation), in model structure (layer norm or dropout), and/or in the loss function itself (norm regularization). There are many arguments for regularization in favoring these simpler models, but the question is always <em>simple in what sense</em>? For example, L2 regularization promotes small solutions, but L1 norm regularization is better for when sparsity is needed. Modern data science practitioners must be able to identify when and where to apply different regularization techniques. Here  we perform regularization from a
+			spectral perspective and introduce a new technique we call <em>spectral dropout</em>.
 			<br><br>
-			Broadly, this is done on the data-side (e.g. augmentation), in model structure (layer norm or dropout), and/or in the loss function itself (norm regularization). There are many arguments for regularization in favoring these simpler models, but the question is simple in what sense? For example, L2 regularization promotes small solutions, but L1 norm regularization is better for when sparsity is needed. Modern data science practitioners must be able to identify when and where to apply different regularization techniques. Here we aim to accomplish and understand regularization from a spectral perspective.
-
+			<h3>What's the Spectral Perspective?</h3>
+			Take a standard multi-layer perceptron (MLP) model. This consists of many linear layers intertwined with pointwise non-linearities. Since the input and output to any particular layer can be represented as vectors, we can represent the layer’s mapping from inputs to outputs as a weight matrix <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi></math>. It turns out that penalizing the complexity of these layer matrices can help prevent overfitting in neural nets.
 			<br><br>
-			Deep learning naturally lends itself to tensor computation. For example, a standard MLP is just the composition of a sequence of matrices and nonlinearities. Spectral decomposition summarizes tensors with eigenvalues and smaller tensors, and we want to leverage this approach for regularization. Specifically, what happens when we favor models that are simple in the spectral sense? How can we efficiently train them?
-					
-		    </div>
-		    <div class="margin-right-block">
-						Margin note that clarifies some detail #main-content-block for intro section.
-		    </div>
+			How does one measure the size or complexity of a matrix? Any matrix can be simplified to a scaled sum of smaller rank-one matrices via its <em>singular value decomposition</em> (SVD). This decomposition produces bases that span its column space as well as feature space, and correpsonding importances of these singular vectors. The SVD is essential for data compression and dimensionality reduction, hence why it naturally lends itself to regularization in deep learning. It's been deployed in several data science applications like recommender systems, latent semantic analysis, and noise filtering <a href="#ref_0">[0]</a>. So in an arbitrary matrix of rank <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>k</mi></math> we have the following SVD:
+			<br><br>
+			<div style="text-align:center;">
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+        <mrow>
+            <mi>W</mi>
+            <mo>=</mo>
+            <mi>U</mi>
+            <mo>&#x03A3;</mo>
+            <msup>
+                <mi>V</mi>
+                <mo>T</mo>
+            </msup>
+        </mrow>
+		<mrow> <mo>=</mo> </mrow>
+		<mrow>
+      <msub>
+        <mi>σ</mi>
+        <mn>1</mn>
+      </msub>
+      <msub>
+        <mi>u</mi>
+        <mn>1</mn>
+      </msub>
+      <msup>
+        <msub>
+          <mi>v</mi>
+          <mn>1</mn>
+        </msub>
+        <mo>⊤</mo>
+      </msup>
+      <mo>+</mo>
+      <msub>
+        <mi>σ</mi>
+        <mn>2</mn>
+      </msub>
+      <msub>
+        <mi>u</mi>
+        <mn>2</mn>
+      </msub>
+      <msup>
+        <msub>
+          <mi>v</mi>
+          <mn>2</mn>
+        </msub>
+        <mo>⊤</mo>
+      </msup>
+      <mo>+</mo>
+      <mo>⋯</mo>
+      <mo>+</mo>
+      <msub>
+        <mi>σ</mi>
+        <mi>k</mi>
+      </msub>
+      <msub>
+        <mi>u</mi>
+        <mi>k</mi>
+      </msub>
+      <msup>
+        <msub>
+          <mi>v</mi>
+          <mi>k</mi>
+        </msub>
+        <mo>⊤</mo>
+      </msup>
+    </mrow>
+    </math>
+			</div>
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/svd.png" width=512px/>
+				<figcaption>Figure 2: The Singular Value Decomposition.</figcaption>
+			</div>
+			<br><br>
+			A common measure of complexity for a matrix is its spectral norm, which is largest of its singular values <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03C3;</mi><mo>(</mo><mi>W</mi><mo>)</mo><mo>=</mo><mo>max</mo><msub><mi>&#x03C3;</mi><mi>i</mi></msub></math>. Yoshida et al. <a href="#ref_1">[1]</a> showed that penalizing the size of weight matrices via the spectral norm improved generalization of deep learning models. Moreover, they generated adversarial inputs that were perturbed only slightly in spectral norm, which upon training with this augmented data again reduced overfitting. In this blog we also regularize from a spectral perspective, where we aim to limit the complexity of spectral decompositions.
+			<br><br>
+			<h3>Dropout</h3>
+			Dropout is a regularization technique introduced by Srivastava et al. <a href="#ref_2">[2]</a> to prevent overfitting in neural networks. The method works by randomly setting a fraction of the neurons' activations to zero during each forward pass in training. This stochastic behavior forces the network to learn robust features that generalize well to unseen data. If there's always some chance of a neuron being set to zero, the model learns to distribute information across neurons within the layer. Formally, given an intermediate layer's activation vector, dropout applies a binary mask sampled from a Bernoulli distribution to zero out units randomly. During inference, all neurons are used, and their outputs are scaled to match the expected training behavior.
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/dropout.png" width=512px/>
+				<figcaption>Figure 3: Dropout in a neural network. Neurons are stochastically deactivated during training. Borrowed figure from <a href="#ref_2">[2]</a>.</figcaption>
+			</div>
+			<br><br>
+			Here we employ dropout within the spectral perspective. Instead of randomly dropping out neurons, we stochastically drop out the spectral components in deep models.
+			</div>
+			<div class="margin-right-block">
+			</div>
 		</div>
 
-		<div class="content-margin-container" id="How does spectral dropout compare to vanilla dropout?">
+		<div class="content-margin-container" id="spectral_dropout">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-					<h1>How does spectral dropout compare to vanilla dropout?</h1>
-			There are existing techniques for spectral norm regularization, which will serve as a benchmark against other standard paradigms like weight decay. We want to answer two main questions by training AlexNet with different dropout techniques on CIFAR-10:
-			<img src="./images/alexnet_diagram.png" width=512px/>
-			<ul>
-				<li>
-			Can spectral dropout improve the generalization of deep learning models? That is, if we probabilistically remove the spectral components of model tensors based on their singular values, will that reduce overfitting? Our hypothesis is that spectral dropout will learn useful intermediate representations via a similar robustness to that granted by standard dropout.
-				</li>
-				<li>
-					How sensitive are networks to spectral perturbations in their tensor components? If we add noise to the model weights that is small in terms of its spectral norm (either adversarially or randomly), does that measurably affect performance?
-
-				</li>
-			</ul>
-			
-			<!-- <br><br>
+					<h2>Spectral Dropout</h2>
+			First, we note that Khan et al. <a href="#ref_3">[3]</a> produced a regularization approach of the same name, but different strategy. They operate by applying a decorrelation transform to neuron activations and dropping out the weak/noisy components in this frequency domain. Their solution improved accuracy on a number of canonical deep learning problems. 
+			<br><br>
+			Our spectral dropout works by taking a linear layer weight matrix <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi></math> and stochastically deactivating components in its spectral representation during training. We essentially want to randomly zero out some singular values (thereby removing its associated component) such that we learn adaptable spectral components. Specifically, given some sampling procedure <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi><mo>(</mo><mo>)</mo></math> and <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi></math>, we introduce our algorithm.
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/specdropalgo.png" width=512px/>
+				<figcaption>Figure 4: Spectral Dropout Algorithm.</figcaption>
+			</div>
+			<br><br>
+			How does one choose the sampling procedure <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi><mo>(</mo><mo>)</mo></math>? Under the heuristic of favoring low-rank matrices, we elected to keep components with probabilities proportional to their singular value. Specifically, we set the drop out probability to <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi><mo>(</mo><msub><mi>&#x03C3;</mi><mi>i</mi></msub><mo>,</mo><mi>W</mi><mo>)</mo><mo>=</mo><mn>1</mn><mo>-</mo><mfrac><msub><mi>&#x03C3;</mi><mi>i</mi></msub><mrow><mo>&#x2225;</mo><mi>W</mi><mo>&#x2225;</mo><mo>*</mo></mrow></mfrac></math>. The normalization here is just the sum of singular values. There may be finetuning to be done here, as one could substitute the nuclear norm for the Frobenius norm, or employ an altogether different procedure.
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/specdropoutex.png" width=512px/>
+				<figcaption>Figure 5: Sample Spectral Dropout Run. Some components get dropped, others stay.</figcaption>
+			</div>
+			<br><br>
+			To build some intuition with spectral dropout, consider a forward pass through the network where we apply the regularization technique and use modified matrix <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W'</mi><mo>=</mo><mi>U</mi><mi>&#x03A3;'</mi><msup><mi>V</mi><mo>T</mo></msup></math>. If, upon evaluation of the loss function, we have good performance on the objective, then the gradient update will scale up the spectral components which picked up improved features. Conversely, if we have high loss, the gradient update will diminish those less useful spectral components. The randomness in the dropout ensures that we don't get stuck learning in a poor section of the spectral space.
+			<br><br>
+			The goal of spectral dropout is to sparsify the singular value spectrum in these linear layers via randomness so that we learn highly generalizable features. As in standard dropout, this stochastic constraining of model complexity will mitigate overfitting.
+			</div>
 		    <div class="margin-right-block">
-						Margin note that clarifies some detail #main-content-block for intro section.
-		    </div> -->
-          <!-- <center>
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <mrow>
-                <mrow>
-                  <mo>&#x2202;</mo>
-                  <mi>y</mi>
-                </mrow>
-                <mo>/</mo>
-                <mrow>
-                  <mo>&#x2202;</mo>
-                  <mi>x</mi>
-                </mrow>
-              </mrow>
-              <mo>=</mo>
-              <mi>x</mi>
-            </math>
-          </center> -->
-          <!-- <br> -->
-          <!-- It's probably best to ask an LLM to help do the web
-          formatting for math. You can tell it "convert this latex equation into MathML: $$\frac{\partial dy}{\partial dx} = x$$"
-          But it took me a few tries. So, if you get frustrated, you can embed an image of the equation, or use other packages for
-          rendering equations on webpages. -->
-		    </div>
-		    <div class="margin-right-block" style="transform: translate(0%, -100%);">
-				<!-- <div class="margin-right-block"> -->
-					Fig. 1. AlexNet architecture. ReLU activation is used after convolutional and linear layers.
-				<!-- </div> -->
 		    </div>
 		</div>
 
-		<div class="content-margin-container" id="Experiments">
-			<div class="margin-left-block">
-			</div>
-				<div class="main-content-block">
+		<div class="content-margin-container" id="experiments">
+				<div class="margin-left-block">
+				</div>
+		    <div class="main-content-block">
 					<h2>Experiments</h2>
-					We use the protocol <a href="https://www.digitalocean.com/community/tutorials/alexnet-pytorch#testing">AlexNet on CIFAR-10</a>, training for 6 epochs with batch size 64, using cross-entropy loss with the SGD optimizer (learning rate 0.005, weight decay 0.005, momentum 0.9).
-					We also follow the protocol to transform CIFAR-10 images from 32x32 to the proper 227x227 input for unmodified AlexNet architecture.
-					<h1>Control</h1>
+			As a proof of concept, we apply spectral dropout on training a convolutional neural network (CNN) for classifying images in the CIFAR-10 dataset <a href="#ref_4">[4]</a>. This problem consists of building a mapping from color images to one of ten classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. We took a modified AlexNet <a href="#ref_5">[5]</a> architecture and tested it with various dropout techniques. The structure was comprised of 5 convolutional layers, 3 max-pooling layers, and 2 fully connected layers, and dropout is standardly applied after each linear layer.
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/alexnet_diagram.png" width=784px/>
+				<figcaption>Fig. 6. AlexNet architecture. ReLU activation is used after convolutional and linear layers.</figcaption>
+			</div>
+			<br><br>
+			As for hyperparameters, we trained for 6 epochs with batch size 64, using cross-entropy loss (as we have a classification problem) with the SGD optimizer (learning rate 0.005, weight decay 0.005, momentum 0.9). We also follow the protocol to transform CIFAR-10 images from 32x32 to the proper 227x227 input for the unmodified AlexNet architecture.
+			<br><br>
+			<h3>Control</h3>
 					We first measure the performance of AlexNet for the following baselines:
 					<ul>
 						<li>No dropout (p = 0)</li>
 						<li>Standard dropout (p = 0.5)</li>
 					</ul>
-					<img src="./images/control.png" width=512px/>
-					Final accuracy without dropout was 70.03%. With dropout was 71.45%. So, we see that dropout does improve generalization and test performance at the cost of more variable and higher training loss.
-				</div>
-		    <div class="margin-right-block">
-				Fig. 2. Training loss for controls, with dropout probability p.
+					<br><br>
+					<div class="centered-image">
+						<img src="./images/control.png" width=512px/>
+						<figcaption>Fig. 7. Training loss for controls, with dropout probability p.</figcaption>
+					</div>
+					<br><br>
+					Final accuracy without dropout was 70.03 percent. With standard dropout it was 71.45 percent. So, we see that dropout does improve generalization and test performance at the cost of more variable and higher training loss.
+			<br><br>
+			<h3>Test</h3>
+			Next we implemented our spectral dropout procedure on the first linear layer after the convolutional section in our CNN.
+			<br><br>
+			<div class="centered-image">
+				<img src="./images/test.png" width=512px/>
+				<figcaption>Fig. 8. Training loss for spectral dropout.</figcaption>
+			</div>
+			<br><br>
+			Final accuracy with spectral dropout was 77.26 percent, so spectral dropout reduced overfitting and improved the model. Moreover, the spectral norm of the weight matrix was smaller than those in the control, suggesting a simpler, regularized model. The training process took over 10x as long, however, due to the costly task of performing an SVD with each forward pass. These results demonstrate the efficacy of spectral dropout in regularization.
+		    </div>
+		    <div class="margin-right-block" style="transform: translate(0%, -100%);">
 		    </div>
 		</div>
 
-		<div class="content-margin-container">
+		<div class="content-margin-container" id="next_steps_and_considerations">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-            <h1>Another section</h1>
-            In this section we embed a video:
-						<video class='my-video' loop autoplay muted style="width: 725px">
-								<source src="./images/mtsh.mp4" type="video/mp4">
-						</video>
-		    </div>
+						<h2>Next Steps and Considerations</h2>
+			Spectral dropout shows promise, but there are still important questions to be answered. Chief among them is how to best choose the sampling procedure <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi><mo>(</mo><mo>)</mo></math>. As aforementioned, although we elected to keep spectral components with probabilities proportional to their singular values, there's no reason to say that this is the best method. If one abstracts the training process as searching through a high-dimensional manifold of matrices, we'd ideally like our procedure to ensure that we balance the exploration of that space with exploitation of good solutions. So we expect that adding a hyperparameter which tunes how much spectral dropout upregulates the sampling of smaller spectral components could help the model explore more of that parameter landscape, finding better solutions faster. After all, poor initialization could lead to the right features being locked in small spectral components, so we want to make sure that we find those in training. In general more research needs to be done on the variability of spectral dropout, especially as it relates to this sampling function.
+			<br><br>
+			A second consideration involves the speed and computational effort of spectral dropout. For a matrix of size <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi><mo>&#xD7;</mo><mi>n</mi></math>, the computational complexity of an SVD is <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>O</mo><mo>(</mo><mo>min</mo><mo>{</mo><mi>m</mi><msup><mi>n</mi><mn>2</mn></msup><mo>,</mo><msup><mi>m</mi><mn>2</mn></msup><mi>n</mi><mo>}</mo><mo>)</mo></math>, which is quite expensive as we run it on larger and larger linear layers. We may be able to achieve comparable results much faster by reducing <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi></math> to its top <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>k</mi></math> components and only applying spectral dropout with that simplified weight matrix. Instead of performing the reduced SVD, we can compute the top <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>k</mi></math> singular values and vectors with power iteration on the Gram matrix <math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>W</mi><mo>T</mo></msup><mi>W</mi></math> and then reconstruct <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W'</mi></math> post selection of dropout components.
+			</div>
 		    <div class="margin-right-block">
-					A caption for the video could go here.
 		    </div>
 		</div>
 
-		<div class="content-margin-container" id="implications_and_limitations">
+		<div class="content-margin-container" id="conclusion">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-						<h1>Implications and limitations</h1>
-						One factor which may preclude this technique from practical use is computational complexity. Spectral dropout requires a full SVD of the weight tensor at each iteration, which is extremely expensive compared to naive, independent dropout. This may be mitigated using a low-rank approximation of the weight tensor.
-		    </div>
+						<h2>Conclusion</h2>
+			Regularization from the spectral perspective endeavors to improve generalization of deep learning models by simplifying their spectral components. This blog introduces a new regularization technique called spectral dropout, which stochastically removes these components in order to learn highly generalizable features. By randomly dropping out some sections in the singular value spectrum of layer matrices, models learn to develop strong components across the spectrum. 
+			<br><br>
+			Experimental results of applying this method on classifying CIFAR-10 images demonstrate its potential, as we improved accuracy over standard dropout. Nevertheless, this needs to be weighed against the longer training time and additional hyperparameter finetuning required through selection of the sampling function <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi></math>.
+			<br><br>
+			The spectral perspective is particularly useful in understanding matrices, in the sense that we can represent a complex object as a linear combination of several smaller and simpler ones. Thinking about regularization of deep networks under this framework is just as effective, and we hope that spectral dropout adds another weapon to the data scientist's arsenal.
+			</div>
 		    <div class="margin-right-block">
 		    </div>
 		</div>
@@ -358,12 +444,15 @@
 		    <div class="main-content-block">
 						<div class='citation' id="references" style="height:auto"><br>
 							<span style="font-size:16px">References:</span><br><br>
-							<a id="ref_1"></a>[1] <a href="https://en.wikipedia.org/wiki/Allegory_of_the_cave">Allegory of the Cave</a>, Plato, c. 375 BC<br><br>
-							<a id="ref_2"></a>[2] <a href="">A Human-Level AGI</a>, OpenAI, 2025<br><br>
+							<a id="ref_0"></a>[0] <a href="https://en.wikipedia.org/wiki/Singular_value_decomposition">Singular Value Decomposition</a>, Wikipedia, 2024.<br><br>
+							<a id="ref_1"></a>[1] <a href="https://arxiv.org/abs/1705.10941">Spectral Norm Regularization for Improving the Generalizability of Deep Learning</a>, Yoshida, Miyato, 2017.<br><br>
+							<a id="ref_2"></a>[2] <a href="https://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf">Dropout: A Simple Way to Prevent Neural Networks from Overfitting</a>, Srivastava, Hinton, Krizhevsky, Sutskever, Salakhutdinov, 2014.<br><br>
+							<a id="ref_3"></a>[3] <a href="https://arxiv.org/abs/1711.08591">Regularization of Deep Neural Networks with Spectral Dropout</a>, Khan, Hayat, Porikli, 2017.<br><br>
+							<a id="ref_4"></a>[4] <a href="https://www.cs.toronto.edu/~kriz/cifar.html">The CIFAR-10 dataset</a>, Krizhevsky, 2009.<br><br>
+							<a id="ref_5"></a>[5] <a href="https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf">ImageNet Classification with Deep Convolutional Neural Networks</a>, Krizhevsky, Sutskever, Hinton, 2012.<br><br>
 						</div>
 		    </div>
 		    <div class="margin-right-block">
-            <!-- margin notes for reference block here -->
 		    </div>
 		</div>
 
